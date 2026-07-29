@@ -16,7 +16,26 @@ variable "repository_topics" {
 
 }
 
+
 # Optional variables
+variable "homepage_url" {
+  description = "(Optional) URL of a page describing the project."
+  type        = string
+  default     = null
+}
+
+variable "visibility" {
+  description = "The visibility of the repository. Can be 'public', 'private', or 'internal'."
+  type        = string
+  default     = "private"
+}
+
+variable "gitignore_template" {
+  description = "(Optional) Use the [name of the template](https://github.com/github/gitignore) without the extension. For example, 'Haskell'."
+  type        = string
+  default     = null
+}
+
 variable "issues_enabled" {
   description = "Whether issues are enabled for this repository."
   type        = bool
@@ -69,13 +88,14 @@ variable "is_template" {
 variable "template" {
   description = "The source template for the repository."
   type = object({
+    owner                = string
     repository           = string
     include_all_branches = optional(bool, false)
   })
   default = {
-    repository           = "ebanx-template-repo"
+    owner                = ""
+    repository           = ""
     include_all_branches = false
+
   }
-
 }
-

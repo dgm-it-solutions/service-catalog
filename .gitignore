@@ -1,3 +1,6 @@
-.terraform
-
 .DS_Store
+*.pem
+.terraform
+*_override.tf
+*.tfvars
+*.tfstate
