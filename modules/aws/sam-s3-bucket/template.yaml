@@ -1,0 +1,73 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  This template is used to create a bucket that is used by the AWS SAM CLI to store source code
+  for Lambda functions. The stack creating this bucket must be called `aws-sam-cli-managed-default`
+  as this is the name AWS SAM CLI looks for when creating a new project.
+# Metadata:
+#   SamCliInfo:
+#     version: 1.105.0
+#     installationId: "0592d55c-97c9-4c8f-869d-b3a93ca74eab"
+Resources:
+  SamCliSourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicPolicy: "true"
+        BlockPublicAcls: "true"
+        IgnorePublicAcls: "true"
+        RestrictPublicBuckets: "true"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          # Expiring based on date is risky, so this is the best we can do for now
+          # ref: https://github.com/aws/aws-sam-cli/issues/2980#issuecomment-1618700440
+          - Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+      Tags:
+        - Key: ManagedStackSource
+          Value: AwsSamCli
+        - Key: tenant
+          Value: shared
+        - Key: environment
+          Value: shared
+
+  SamCliSourceBucketBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: SamCliSourceBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:::${SamCliSourceBucket}/*"
+            Principal:
+              Service: serverlessrepo.amazonaws.com
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+          - Action:
+              - s3:*
+            Effect: Deny
+            Resource:
+              - !Sub "arn:${AWS::Partition}:s3:::${SamCliSourceBucket}"
+              - !Sub "arn:${AWS::Partition}:s3:::${SamCliSourceBucket}/*"
+            Principal: "*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+Outputs:
+  SourceBucket:
+    Value: !Ref SamCliSourceBucket
